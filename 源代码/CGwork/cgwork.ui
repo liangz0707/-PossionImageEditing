@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CGworkClass</class>
+ <widget class="QMainWindow" name="CGworkClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1390</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>CGwork</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <widget class="QWidget" name="horizontalLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>1391</width>
+      <height>671</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+       <property name="title">
+        <string>操作面板</string>
+       </property>
+       <widget class="QWidget" name="verticalLayoutWidget_2">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>20</y>
+          <width>191</width>
+          <height>401</height>
+         </rect>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="QTabWidget" name="vigTabWidget">
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <widget class="QWidget" name="tab_2">
+            <attribute name="title">
+             <string>高级处理</string>
+            </attribute>
+            <widget class="QGroupBox" name="groupBox_10">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>10</y>
+               <width>171</width>
+               <height>111</height>
+              </rect>
+             </property>
+             <property name="title">
+              <string>possion image editing</string>
+             </property>
+             <widget class="QSpinBox" name="brushSpinBox">
+              <property name="geometry">
+               <rect>
+                <x>80</x>
+                <y>80</y>
+                <width>91</width>
+                <height>22</height>
+               </rect>
+              </property>
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>40</number>
+              </property>
+              <property name="value">
+               <number>12</number>
+              </property>
+             </widget>
+             <widget class="QLabel" name="label_7">
+              <property name="geometry">
+               <rect>
+                <x>20</x>
+                <y>50</y>
+                <width>101</width>
+                <height>20</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string>画笔半径（像素）：</string>
+              </property>
+             </widget>
+             <widget class="QPushButton" name="PIEButton">
+              <property name="geometry">
+               <rect>
+                <x>80</x>
+                <y>20</y>
+                <width>91</width>
+                <height>23</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string>RUN</string>
+              </property>
+             </widget>
+            </widget>
+            <widget class="QGroupBox" name="groupBox_12">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>130</y>
+               <width>171</width>
+               <height>51</height>
+              </rect>
+             </property>
+             <property name="title">
+              <string>patchmatch</string>
+             </property>
+             <widget class="QPushButton" name="PMButton">
+              <property name="geometry">
+               <rect>
+                <x>70</x>
+                <y>20</y>
+                <width>91</width>
+                <height>23</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string>RUN</string>
+              </property>
+             </widget>
+            </widget>
+           </widget>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="srcImgButton">
+           <property name="text">
+            <string>显示原图</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="dstImgButton">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;在opencv中显示图片，可以在象素级别查看图像点&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>显示结果</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="returnMaskButton">
+           <property name="text">
+            <string>撤销模板</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="horizontalLayoutWidget">
+        <property name="geometry">
+         <rect>
+          <x>210</x>
+          <y>10</y>
+          <width>1171</width>
+          <height>651</height>
+         </rect>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="ActiveLabel" name="srcImgLabel">
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+           <property name="text">
+            <string>加载图片A</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="ActiveLabel" name="dstImgLabel">
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+           <property name="text">
+            <string>加载图片B</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1390</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>文件 </string>
+    </property>
+    <addaction name="openActionA"/>
+    <addaction name="openActionB"/>
+    <addaction name="saveAction"/>
+    <addaction name="separator"/>
+    <addaction name="exitAction"/>
+   </widget>
+   <addaction name="menu"/>
+  </widget>
+  <action name="openActionA">
+   <property name="text">
+    <string>打开图像A</string>
+   </property>
+  </action>
+  <action name="saveAction">
+   <property name="text">
+    <string>保存结果</string>
+   </property>
+  </action>
+  <action name="exitAction">
+   <property name="text">
+    <string>退出</string>
+   </property>
+  </action>
+  <action name="vignetAction">
+   <property name="text">
+    <string>Vignetting</string>
+   </property>
+  </action>
+  <action name="action1231">
+   <property name="text">
+    <string>1231</string>
+   </property>
+  </action>
+  <action name="action">
+   <property name="text">
+    <string>白平衡</string>
+   </property>
+  </action>
+  <action name="medianFilterAction">
+   <property name="text">
+    <string>中值滤波</string>
+   </property>
+  </action>
+  <action name="sharpenAction">
+   <property name="text">
+    <string>锐化</string>
+   </property>
+  </action>
+  <action name="openActionB">
+   <property name="text">
+    <string>打开图像B</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>ActiveLabel</class>
+   <extends>QLabel</extends>
+   <header location="global">activelabel.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="cgwork.qrc"/>
+ </resources>
+ <connections/>
+</ui>

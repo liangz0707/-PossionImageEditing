@@ -13,13 +13,24 @@ common image formats.
 - mip level count
 - per-mip pixel data
 
-## Supported input formats (via stb_image)
+## Features
 
-PNG, JPG/JPEG, BMP, TGA, PSD, GIF, HDR, PIC, PNM.
+- load textures into unified, uncompressed layout
+- convert between channel formats and pixel types
+- optional mipmap generation (2D textures)
+- vertical flip on load or save
 
-## Supported output formats (via stb_image_write)
+## Supported input formats
 
-PNG, JPG/JPEG, BMP, TGA (8-bit) and HDR (float32).
+- PNG, JPG/JPEG, BMP, TGA, PSD, GIF, HDR, PIC, PNM (stb_image)
+- EXR (tinyexr)
+
+## Supported output formats
+
+- PNG, JPG/JPEG, BMP, TGA (8-bit) and HDR (float32) (stb_image_write)
+- EXR (float32) (tinyexr)
+- PPM/PGM/PNM (8-bit binary P6/P5)
+
 Writing full mip chains is not supported by these formats.
 
 ## Build
@@ -42,4 +53,6 @@ cmake --build .
 ## Notes
 
 - HDR input is loaded as float32 automatically.
-- Output format may force the pixel type (HDR uses float32, others use uint8).
+- EXR output is written as float32.
+- PPM/PGM/PNM output is 8-bit only.
+- Output format may force the pixel type (HDR/EXR use float32, others use uint8).

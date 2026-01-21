@@ -13,15 +13,24 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(stb)
 
+FetchContent_Declare(
+  tinyexr
+  GIT_REPOSITORY https://github.com/syoyo/tinyexr.git
+  GIT_TAG master
+)
+FetchContent_MakeAvailable(tinyexr)
+
 add_library(texture_lib
   src/Texture.cpp
   src/TextureIO.cpp
   src/stb_impl.cpp
+  src/tinyexr_impl.cpp
 )
 target_include_directories(texture_lib
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${stb_SOURCE_DIR}
+    ${tinyexr_SOURCE_DIR}
 )
 
 add_executable(texture_tool

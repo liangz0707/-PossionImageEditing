@@ -3,12 +3,15 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <string>
 #include <vector>
 
 #include <stb_image.h>
 #include <stb_image_write.h>
+#include <tinyexr.h>
 
 namespace texture {
 namespace {
@@ -203,6 +206,167 @@ std::vector<uint8_t> FlipY(const MipLevel& level,
   return flipped;
 }
 
+bool WriteBinaryFile(const std::string& path,
+                     const uint8_t* data,
+                     size_t size,
+                     std::string* error) {
+  std::ofstream file(path, std::ios::binary);
+  if (!file) {
+    if (error) {
+      *error = "Failed to open output file: " + path;
+    }
+    return false;
+  }
+  file.write(reinterpret_cast<const char*>(data),
+             static_cast<std::streamsize>(size));
+  if (!file) {
+    if (error) {
+      *error = "Failed to write output file: " + path;
+    }
+    return false;
+  }
+  return true;
+}
+
+bool SavePnmTexture(const Texture& texture,
+                    const SaveOptions& options,
+                    const std::string& path,
+                    std::string* error) {
+  const std::string ext = GetExtension(path);
+  const bool isPgm = ext == "pgm";
+  const bool isPpm = ext == "ppm";
+  const bool isPnm = ext == "pnm";
+  if (!isPgm && !isPpm && !isPnm) {
+    return false;
+  }
+
+  ColorFormat targetFormat = ColorFormat::RGB;
+  if (isPgm) {
+    targetFormat = ColorFormat::R;
+  } else if (isPnm && texture.format == ColorFormat::R) {
+    targetFormat = ColorFormat::R;
+  }
+
+  Texture converted = ConvertTexture(texture, targetFormat, PixelType::UInt8);
+  const MipLevel& base = converted.mips[0];
+  const int width = base.width;
+  const int height = base.height;
+
+  std::vector<uint8_t> staging;
+  const uint8_t* data = base.pixels.data();
+  if (options.flipY) {
+    staging = FlipY(base, converted.format, converted.type);
+    data = staging.data();
+  }
+
+  std::string header;
+  if (targetFormat == ColorFormat::R) {
+    header = "P5\n";
+  } else {
+    header = "P6\n";
+  }
+  header += std::to_string(width) + " " + std::to_string(height) + "\n255\n";
+
+  std::vector<uint8_t> output;
+  output.reserve(header.size() + base.pixels.size());
+  output.insert(output.end(), header.begin(), header.end());
+  output.insert(output.end(), data, data + base.pixels.size());
+
+  return WriteBinaryFile(path, output.data(), output.size(), error);
+}
+
+bool LoadExrTexture(const std::string& path,
+                    const LoadOptions& options,
+                    Texture* outTexture,
+                    std::string* error) {
+  float* rgba = nullptr;
+  int width = 0;
+  int height = 0;
+  const char* err = nullptr;
+  const int ret = LoadEXR(&rgba, &width, &height, path.c_str(), &err);
+  if (ret != TINYEXR_SUCCESS) {
+    if (error) {
+      *error = err ? err : "Failed to load EXR.";
+    }
+    if (err) {
+      FreeEXRErrorMessage(err);
+    }
+    return false;
+  }
+
+  Texture base;
+  base.dimension = TextureDimension::Tex2D;
+  base.format = ColorFormat::RGBA;
+  base.type = PixelType::Float32;
+  base.mips.resize(1);
+  base.mips[0].width = width;
+  base.mips[0].height = height;
+  base.mips[0].depth = 1;
+  base.mips[0].pixels.resize(
+      MipByteSize(width, height, 1, base.format, base.type));
+  std::memcpy(base.mips[0].pixels.data(),
+              rgba,
+              base.mips[0].pixels.size());
+  std::free(rgba);
+
+  Texture result =
+      ConvertTexture(base, options.preferredFormat, options.preferredType);
+  if (options.flipY) {
+    result.mips[0].pixels = FlipY(result.mips[0], result.format, result.type);
+  }
+
+  if (options.generateMipmaps) {
+    std::string mipError;
+    if (!GenerateMipmaps(&result, options.maxMipLevels, &mipError)) {
+      if (error) {
+        *error = mipError;
+      }
+      return false;
+    }
+  }
+
+  *outTexture = std::move(result);
+  return true;
+}
+
+bool SaveExrTexture(const Texture& texture,
+                    const SaveOptions& options,
+                    const std::string& path,
+                    std::string* error) {
+  ColorFormat targetFormat = options.outputFormat;
+  if (targetFormat == ColorFormat::RG) {
+    targetFormat = ColorFormat::RGB;
+  }
+  Texture converted = ConvertTexture(texture, targetFormat, PixelType::Float32);
+  const MipLevel& base = converted.mips[0];
+  const int width = base.width;
+  const int height = base.height;
+  const int channels = ChannelCount(converted.format);
+
+  std::vector<uint8_t> staging;
+  const uint8_t* data = base.pixels.data();
+  if (options.flipY) {
+    staging = FlipY(base, converted.format, converted.type);
+    data = staging.data();
+  }
+
+  const float* floatData = reinterpret_cast<const float*>(data);
+  const char* err = nullptr;
+  const int ret =
+      SaveEXR(floatData, width, height, channels, 0, path.c_str(), &err);
+  if (ret != TINYEXR_SUCCESS) {
+    if (error) {
+      *error = err ? err : "Failed to write EXR.";
+    }
+    if (err) {
+      FreeEXRErrorMessage(err);
+    }
+    return false;
+  }
+
+  return true;
+}
+
 }  // namespace
 
 bool LoadTextureFromFile(const std::string& path,
@@ -214,6 +378,11 @@ bool LoadTextureFromFile(const std::string& path,
       *error = "Output texture pointer is null.";
     }
     return false;
+  }
+
+  const std::string ext = GetExtension(path);
+  if (ext == "exr") {
+    return LoadExrTexture(path, options, outTexture, error);
   }
 
   stbi_set_flip_vertically_on_load(options.flipY ? 1 : 0);
@@ -372,6 +541,13 @@ bool SaveTextureToFile(const Texture& texture,
   }
 
   const std::string ext = GetExtension(path);
+  if (ext == "exr") {
+    return SaveExrTexture(texture, options, path, error);
+  }
+  if (ext == "ppm" || ext == "pgm" || ext == "pnm") {
+    return SavePnmTexture(texture, options, path, error);
+  }
+
   const bool isHdr = ext == "hdr";
 
   PixelType targetType = isHdr ? PixelType::Float32 : PixelType::UInt8;

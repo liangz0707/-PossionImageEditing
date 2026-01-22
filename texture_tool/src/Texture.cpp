@@ -4,33 +4,172 @@
 
 namespace texture {
 
-int Texture::Width() const {
-  if (mips.empty()) {
+TextureResource::TextureResource() = default;
+
+TextureResource::TextureResource(TextureDimension dimension,
+                                 ChannelLayout layout,
+                                 int channelCount,
+                                 PixelType type) {
+  Reset(dimension, layout, channelCount, type);
+}
+
+void TextureResource::Reset(TextureDimension dimension,
+                            ChannelLayout layout,
+                            int channelCount,
+                            PixelType type) {
+  dimension_ = dimension;
+  layout_ = layout;
+  channelCount_ = channelCount;
+  type_ = type;
+  mips_.clear();
+  channelNames_.clear();
+}
+
+void TextureResource::Clear() {
+  mips_.clear();
+}
+
+TextureDimension TextureResource::Dimension() const {
+  return dimension_;
+}
+
+ChannelLayout TextureResource::Layout() const {
+  return layout_;
+}
+
+int TextureResource::ChannelCount() const {
+  return channelCount_;
+}
+
+PixelType TextureResource::Type() const {
+  return type_;
+}
+
+void TextureResource::SetLayout(ChannelLayout layout) {
+  layout_ = layout;
+}
+
+void TextureResource::SetChannelCount(int channelCount) {
+  channelCount_ = channelCount;
+}
+
+void TextureResource::SetType(PixelType type) {
+  type_ = type;
+}
+
+void TextureResource::SetName(const std::string& name) {
+  name_ = name;
+}
+
+const std::string& TextureResource::Name() const {
+  return name_;
+}
+
+void TextureResource::SetChannelNames(std::vector<std::string> names) {
+  channelNames_ = std::move(names);
+}
+
+const std::vector<std::string>& TextureResource::ChannelNames() const {
+  return channelNames_;
+}
+
+int TextureResource::Width() const {
+  if (mips_.empty()) {
     return 0;
   }
-  return mips[0].width;
+  return mips_[0].width;
 }
 
-int Texture::Height() const {
-  if (mips.empty()) {
+int TextureResource::Height() const {
+  if (mips_.empty()) {
     return 0;
   }
-  return mips[0].height;
+  return mips_[0].height;
 }
 
-int Texture::Depth() const {
-  if (mips.empty()) {
+int TextureResource::Depth() const {
+  if (mips_.empty()) {
     return 0;
   }
-  return mips[0].depth;
+  return mips_[0].depth;
 }
 
-int Texture::MipCount() const {
-  return static_cast<int>(mips.size());
+int TextureResource::MipCount() const {
+  return static_cast<int>(mips_.size());
 }
 
-int ChannelCount(ColorFormat format) {
-  return static_cast<int>(format);
+TextureMipLevel& TextureResource::Mip(int index) {
+  return mips_.at(static_cast<size_t>(index));
+}
+
+const TextureMipLevel& TextureResource::Mip(int index) const {
+  return mips_.at(static_cast<size_t>(index));
+}
+
+std::vector<TextureMipLevel>& TextureResource::Mips() {
+  return mips_;
+}
+
+const std::vector<TextureMipLevel>& TextureResource::Mips() const {
+  return mips_;
+}
+
+void TextureResource::AllocateMipChain(int width,
+                                       int height,
+                                       int depth,
+                                       int mipLevels) {
+  const int levels = std::max(1, mipLevels);
+  mips_.resize(levels);
+
+  int levelWidth = std::max(1, width);
+  int levelHeight = std::max(1, height);
+  int levelDepth = std::max(1, depth);
+  for (int level = 0; level < levels; ++level) {
+    TextureMipLevel& mip = mips_[level];
+    mip.width = levelWidth;
+    mip.height = levelHeight;
+    mip.depth = levelDepth;
+    mip.pixels.resize(MipByteSize(levelWidth,
+                                  levelHeight,
+                                  levelDepth,
+                                  channelCount_,
+                                  type_));
+
+    levelWidth = std::max(1, levelWidth / 2);
+    levelHeight = std::max(1, levelHeight / 2);
+    levelDepth = std::max(1, levelDepth / 2);
+  }
+}
+
+int ChannelCount(ChannelLayout layout) {
+  switch (layout) {
+    case ChannelLayout::R:
+      return 1;
+    case ChannelLayout::RG:
+      return 2;
+    case ChannelLayout::RGB:
+      return 3;
+    case ChannelLayout::RGBA:
+      return 4;
+    case ChannelLayout::Unknown:
+    default:
+      return 0;
+  }
+}
+
+ChannelLayout GuessLayout(int channelCount) {
+  switch (channelCount) {
+    case 1:
+      return ChannelLayout::R;
+    case 2:
+      return ChannelLayout::RG;
+    case 3:
+      return ChannelLayout::RGB;
+    case 4:
+      return ChannelLayout::RGBA;
+    default:
+      return ChannelLayout::Unknown;
+  }
 }
 
 size_t BytesPerChannel(PixelType type) {
@@ -46,49 +185,23 @@ size_t BytesPerChannel(PixelType type) {
   }
 }
 
-size_t BytesPerPixel(ColorFormat format, PixelType type) {
-  return static_cast<size_t>(ChannelCount(format)) * BytesPerChannel(type);
+size_t BytesPerPixel(int channelCount, PixelType type) {
+  if (channelCount <= 0) {
+    return 0;
+  }
+  return static_cast<size_t>(channelCount) * BytesPerChannel(type);
 }
 
 size_t MipByteSize(int width,
                    int height,
                    int depth,
-                   ColorFormat format,
+                   int channelCount,
                    PixelType type) {
-  if (width <= 0 || height <= 0 || depth <= 0) {
+  if (width <= 0 || height <= 0 || depth <= 0 || channelCount <= 0) {
     return 0;
   }
   return static_cast<size_t>(width) * static_cast<size_t>(height) *
-         static_cast<size_t>(depth) * BytesPerPixel(format, type);
-}
-
-Texture CreateTexture2D(int width,
-                        int height,
-                        ColorFormat format,
-                        PixelType type,
-                        int mipLevels) {
-  Texture texture;
-  texture.dimension = TextureDimension::Tex2D;
-  texture.format = format;
-  texture.type = type;
-
-  int levels = std::max(1, mipLevels);
-  texture.mips.resize(levels);
-
-  int levelWidth = std::max(1, width);
-  int levelHeight = std::max(1, height);
-  for (int level = 0; level < levels; ++level) {
-    MipLevel& mip = texture.mips[level];
-    mip.width = levelWidth;
-    mip.height = levelHeight;
-    mip.depth = 1;
-    mip.pixels.resize(MipByteSize(levelWidth, levelHeight, 1, format, type));
-
-    levelWidth = std::max(1, levelWidth / 2);
-    levelHeight = std::max(1, levelHeight / 2);
-  }
-
-  return texture;
+         static_cast<size_t>(depth) * BytesPerPixel(channelCount, type);
 }
 
 const char* ToString(PixelType type) {
@@ -104,16 +217,17 @@ const char* ToString(PixelType type) {
   }
 }
 
-const char* ToString(ColorFormat format) {
-  switch (format) {
-    case ColorFormat::R:
+const char* ToString(ChannelLayout layout) {
+  switch (layout) {
+    case ChannelLayout::R:
       return "r";
-    case ColorFormat::RG:
+    case ChannelLayout::RG:
       return "rg";
-    case ColorFormat::RGB:
+    case ChannelLayout::RGB:
       return "rgb";
-    case ColorFormat::RGBA:
+    case ChannelLayout::RGBA:
       return "rgba";
+    case ChannelLayout::Unknown:
     default:
       return "unknown";
   }
